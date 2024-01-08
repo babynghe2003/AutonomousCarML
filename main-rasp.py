@@ -52,14 +52,14 @@ def video_stream():
         return P * kp + I * ki + D * kd
 
     camera = PiCamera()
-    camera.resolution = (640, 480)
+    camera.resolution = (400, 300)
     camera.framerate = 20
-    rawCapture = PiRGBArray(camera, size=(640, 480))
+    rawCapture = PiRGBArray(camera, size=(400, 300))
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
         try:
             # success, image = vidcap.read()
             image = frame.array
-            image = cv2.resize(image, (640, 480))
+            image = cv2.resize(image, (400, 300))
             width = image.shape[1]
             height = image.shape[0]
 

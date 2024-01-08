@@ -48,26 +48,28 @@ def pid(error):
     return P * kp + I * ki + D * kd
 
 camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = 32
-rawCapture = PiRGBArray(camera, size=(640, 480))
+camera.resolution = (640,480)
+camera.framerate = 40
+rawCapture = PiRGBArray(camera, size=(640,480))
 
 time.sleep(1)
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     try:
         # success, image = vidcap.read()
         image = frame.array
-        image = cv2.resize(image, (640, 480))
+        image = cv2.resize(image, (640,480))
         width = image.shape[1]
         height = image.shape[0]
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blurred, 50, 150)
+        
+        cv2.imshow("edges", edges)
 
         # Use Hough Circle Transform for circle detection
         circles = cv2.HoughCircles(
-            edges, cv2.HOUGH_GRADIENT, dp=1, minDist=50, param1=70, param2=50, minRadius=10, maxRadius=220
+            edges, cv2.HOUGH_GRADIENT, dp=1, minDist=50, param1=80, param2=70, minRadius=4, maxRadius=220
         )
 
         # Draw detected circles
@@ -87,9 +89,6 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
             coordinate = ((max_circle[0] - max_circle[2], max_circle[1] - max_circle[2]), (max_circle[0] + max_circle[2], max_circle[1] + max_circle[2]))
 
-            diff_speed = pid(width/2 - max_circle[0])
-            print(diff_speed)
-            motor.forward(25 + diff_speed, 25 - diff_speed)
             sign = cropSign(image, coordinate)
 
             cv2.circle(image, (max_circle[0], max_circle[1]), max_circle[2], (0, 255, 0), 2)  # Draw the outer circle
@@ -101,10 +100,14 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             if label != 0 and label != last_label:
                 last_label = label
 
-            if last_label is not None:
-                print(SIGNS[last_label])
-                font = cv2.FONT_HERSHEY_PLAIN
-                cv2.putText(image,SIGNS[last_label],(coordinate[0][0], coordinate[0][1] -15), font, 1,(0,0,255),2,cv2.LINE_4)
+            if label != 0:
+                diff_speed = pid(width/2 - max_circle[0])
+                print(diff_speed)
+#                 motor.forward(35 + diff_speed, 35 - diff_speed)
+
+            print(SIGNS[label])
+            font = cv2.FONT_HERSHEY_PLAIN
+            cv2.putText(image,SIGNS[label],(coordinate[0][0], coordinate[0][1] -15), font, 1,(0,0,255),2,cv2.LINE_4)
         # Display the result
         cv2.imshow('Detected Circles', image)
         if cv2.waitKey(1) & 0xFF == ord('q'):
